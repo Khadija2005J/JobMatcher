@@ -160,7 +160,6 @@ class CVMatcher:
 
         prompt = f"""
         Tu es un expert RH.
-
         Rédige une annonce d'emploi professionnelle et attractive.
 
         📌 Informations du poste :
@@ -185,13 +184,16 @@ class CVMatcher:
         🎁 Avantages :
         {benefits}
 
+        ⚠️ CONSIGNE IMPORTANTE : 
+        Ne mentionne JAMAIS de numéro de téléphone, d'adresse e-mail ou de lien externe pour postuler. 
+        Termine l'annonce par une invitation courte à utiliser le bouton de candidature ci-dessous.
+
         Structure obligatoire :
         - Introduction
         - Missions
         - Profil recherché
         - Avantages
-        - Informations pratiques
-        - Call to action
+        - Conclusion (sans coordonnées)
         """
 
         try:

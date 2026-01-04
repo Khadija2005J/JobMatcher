@@ -108,11 +108,14 @@ def root():
 
 @app.post("/register")
 async def register(user: UserRegister):
-    """Inscription d'un nouvel utilisateur."""
-    if user.role not in ['recruiter', 'candidate']:
-        raise HTTPException(status_code=400, detail="Le rôle doit être 'recruiter' ou 'candidate'")
+    # Sécurité : On bloque l'inscription si quelqu'un force le rôle 'recruiter'
+    if user.role == 'recruiter':
+        raise HTTPException(
+            status_code=403, 
+            detail="La création de compte recruteur est réservée à l'administrateur système."
+        )
     
-    user_id = create_user(user.email, user.password, user.name, user.role)
+    user_id = create_user(user.email, user.password, user.name, 'candidate')
     
     if user_id is None:
         raise HTTPException(status_code=400, detail="Cet email est déjà utilisé")

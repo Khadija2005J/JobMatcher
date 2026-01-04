@@ -185,13 +185,19 @@ body {
 
 .btn-outline {
   background: transparent;
-  color: var(--text-light);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  /* On remplace le blanc par une couleur sombre (ex: noir ou gris foncé) */
+  color: #1a1a1a; 
+  /* Une bordure grise semi-transparente pour qu'elle soit visible sur le blanc */
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  padding: 10px 20px; /* Optionnel : pour s'assurer qu'il a la même taille */
+  border-radius: 5px;
+  transition: all 0.3s ease;
 }
 
 .btn-outline:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
+  /* Un léger fond gris au survol */
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.4);
 }
 
 .btn:disabled {

@@ -132,12 +132,7 @@ const CandidateDashboard = ({ user, onLogout }) => {
                     <span className={`badge ${app.status === 'accepted' ? 'badge-success' : app.status === 'rejected' ? 'badge-danger' : 'badge-warning'}`} style={{ marginTop: '0.5rem' }}>
                       {app.status === 'pending' ? 'En attente' : app.status === 'accepted' ? '✓ Accepté' : '✗ Refusé'}
                     </span>
-                    {typeof app.score !== 'undefined' && (
-                      <div style={{ marginTop: '0.75rem', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                        <div style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '1.15rem' }}>{Math.round(app.score)}%</div>
-                        <div style={{ color: 'var(--text-primary)', lineHeight: 1.4 }}>{app.justification}</div>
-                      </div>
-                    )}
+                    
                   </div>
                 </div>
               ))

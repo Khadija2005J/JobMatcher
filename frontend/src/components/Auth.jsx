@@ -9,7 +9,7 @@ const Auth = ({ onLogin }) => {
     email: '',
     password: '',
     name: '',
-    role: 'recruiter'
+    role: 'candidate' // Forcé à candidate pour les inscriptions
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -21,10 +21,6 @@ const Auth = ({ onLogin }) => {
     });
   };
 
-  const selectRole = (role) => {
-    setFormData({ ...formData, role });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -32,6 +28,9 @@ const Auth = ({ onLogin }) => {
 
     try {
       const endpoint = isLogin ? '/login' : '/register';
+      
+      // En mode Login, on envoie juste email/password.
+      // En mode Register, on envoie tout (le rôle est déjà 'candidate' par défaut)
       const payload = isLogin
         ? { email: formData.email, password: formData.password }
         : formData;
@@ -41,8 +40,13 @@ const Auth = ({ onLogin }) => {
       if (response.data.user) {
         onLogin(response.data.user);
       } else if (response.data.user_id) {
-        // Registration success
-        onLogin({ id: response.data.user_id, name: formData.name, email: formData.email, role: formData.role });
+        // Succès de l'inscription candidat
+        onLogin({ 
+            id: response.data.user_id, 
+            name: formData.name, 
+            email: formData.email, 
+            role: 'candidate' 
+        });
       }
     } catch (err) {
       setError(err.response?.data?.detail || 'Une erreur est survenue');
@@ -53,48 +57,30 @@ const Auth = ({ onLogin }) => {
 
   return (
     <section className="auth-section">
-      <h2>{isLogin ? 'Connexion' : 'Inscription'}</h2>
-      <p>{isLogin ? 'Accédez à votre espace personnel' : 'Créez votre compte gratuitement'}</p>
+      {/* Titre dynamique : "Connexion" pour tous ou "Inscription Candidat" */}
+      <h2>{isLogin ? 'Connexion' : 'Inscription Candidat'}</h2>
+      <p>
+        {isLogin 
+          ? 'Accédez à votre espace (Candidat ou Recruteur)' 
+          : 'Créez votre profil candidat pour postuler aux offres'}
+      </p>
       
       {error && <div className="alert alert-error">{error}</div>}
       
       <form onSubmit={handleSubmit}>
         {!isLogin && (
-          <>
-            <div className="form-group">
-              <label>Nom complet</label>
-              <input
-                type="text"
-                name="name"
-                className="form-control"
-                placeholder="Jean Dupont"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Vous êtes...</label>
-              <div className="role-selector">
-                <label 
-                  className={`role-option ${formData.role === 'recruiter' ? 'active' : ''}`}
-                  onClick={() => selectRole('recruiter')}
-                >
-                  <input type="radio" name="role" value="recruiter" checked={formData.role === 'recruiter'} readOnly />
-                  <span className="role-icon">💼</span>
-                  <strong>Recruteur</strong>
-                </label>
-                <label 
-                  className={`role-option ${formData.role === 'candidate' ? 'active' : ''}`}
-                  onClick={() => selectRole('candidate')}
-                >
-                  <input type="radio" name="role" value="candidate" checked={formData.role === 'candidate'} readOnly />
-                  <span className="role-icon">👤</span>
-                  <strong>Candidat</strong>
-                </label>
-              </div>
-            </div>
-          </>
+          <div className="form-group">
+            <label>Nom complet</label>
+            <input
+              type="text"
+              name="name"
+              className="form-control"
+              placeholder="Jean Dupont"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
+          </div>
         )}
         
         <div className="form-group">
@@ -125,15 +111,25 @@ const Auth = ({ onLogin }) => {
         </div>
         
         <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
-          {loading ? <span className="loading"></span> : (isLogin ? 'Se Connecter' : "Créer mon compte")}
+          {loading ? <span className="loading"></span> : (isLogin ? 'Se Connecter' : "Créer mon compte Candidat")}
         </button>
       </form>
       
       <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
         {isLogin ? (
-          <>Pas encore de compte ? <a href="#" onClick={(e) => { e.preventDefault(); setIsLogin(false); }} style={{ color: 'var(--secondary)', fontWeight: 600, textDecoration: 'none' }}>Créer un compte</a></>
+          <>
+            Vous êtes un candidat ?{' '}
+            <a href="#" onClick={(e) => { e.preventDefault(); setIsLogin(false); }} style={{ color: 'var(--secondary)', fontWeight: 600, textDecoration: 'none' }}>
+              Créer un compte
+            </a>
+          </>
         ) : (
-          <>Déjà un compte ? <a href="#" onClick={(e) => { e.preventDefault(); setIsLogin(true); }} style={{ color: 'var(--secondary)', fontWeight: 600, textDecoration: 'none' }}>Se connecter</a></>
+          <>
+            Déjà un compte ?{' '}
+            <a href="#" onClick={(e) => { e.preventDefault(); setIsLogin(true); }} style={{ color: 'var(--secondary)', fontWeight: 600, textDecoration: 'none' }}>
+              Se connecter
+            </a>
+          </>
         )}
       </p>
     </section>
