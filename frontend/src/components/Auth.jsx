@@ -3,8 +3,9 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:8000';
 
-const Auth = ({ onLogin }) => {
-  const [isLogin, setIsLogin] = useState(true);
+const Auth = ({ onLogin, initialMode }) => {
+  const [isLogin, setIsLogin] = useState(initialMode !== 'register');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -29,18 +30,27 @@ const Auth = ({ onLogin }) => {
     try {
       const endpoint = isLogin ? '/login' : '/register';
       
-      // En mode Login, on envoie juste email/password.
-      // En mode Register, on envoie tout (le rôle est déjà 'candidate' par défaut)
+      // Préparation des données à envoyer au backend
       const payload = isLogin
         ? { email: formData.email, password: formData.password }
         : formData;
 
+      // Appel à l'API via Axios
       const response = await axios.post(`${API_URL}${endpoint}`, payload);
       
+      // --- CRUCIAL : Sauvegarde du token pour l'authentification future ---
+      // Votre backend renvoie 'access_token' dans l'objet de réponse
+      if (response.data && response.data.access_token) {
+        localStorage.setItem('access_token', response.data.access_token);
+        console.log("Succès : Token enregistré dans le localStorage.");
+      }
+
+      // Gestion de la redirection ou de l'état de l'application
       if (response.data.user) {
+        // Cas d'un login réussi
         onLogin(response.data.user);
       } else if (response.data.user_id) {
-        // Succès de l'inscription candidat
+        // Cas d'une inscription réussie
         onLogin({ 
             id: response.data.user_id, 
             name: formData.name, 
@@ -49,11 +59,17 @@ const Auth = ({ onLogin }) => {
         });
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Une erreur est survenue');
+      // Gestion des erreurs (ex: 401 Unauthorized si mauvais identifiants)
+      console.error("Erreur d'authentification:", err);
+      setError(err.response?.data?.detail || 'Une erreur est survenue lors de la connexion');
     } finally {
       setLoading(false);
     }
   };
+  // Si on affiche le composant de mot de passe oublié
+  if (showForgotPassword) {
+    return <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />;
+  }
 
   return (
     <section className="auth-section">
@@ -110,6 +126,23 @@ const Auth = ({ onLogin }) => {
           />
         </div>
         
+        {isLogin && (
+          <div style={{ textAlign: 'right', marginTop: '-0.5rem', marginBottom: '1rem' }}>
+            <a 
+              href="#" 
+              onClick={(e) => { e.preventDefault(); setShowForgotPassword(true); }}
+              style={{ 
+                color: 'var(--secondary)', 
+                fontSize: '0.9rem', 
+                textDecoration: 'none',
+                fontWeight: 500
+              }}
+            >
+              Mot de passe oublié ?
+            </a>
+          </div>
+        )}
+        
         <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
           {loading ? <span className="loading"></span> : (isLogin ? 'Se Connecter' : "Créer mon compte Candidat")}
         </button>
@@ -131,6 +164,81 @@ const Auth = ({ onLogin }) => {
             </a>
           </>
         )}
+      </p>
+    </section>
+  );
+};
+
+// Composant ForgotPassword intégré
+const ForgotPasswordForm = ({ onBack }) => {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const response = await axios.post(`${API_URL}/forgot-password`, { email });
+      setSuccess(true);
+      setMessage(response.data.message);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Une erreur est survenue');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section className="auth-section">
+      <h2>Mot de passe oublié</h2>
+      <p>
+        {success 
+          ? 'Vérifiez votre boîte email pour réinitialiser votre mot de passe.'
+          : 'Entrez votre adresse email pour recevoir un lien de réinitialisation.'}
+      </p>
+      
+      {error && <div className="alert alert-error">{error}</div>}
+      {message && <div className="alert alert-success">{message}</div>}
+      
+      {!success && (
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Adresse email</label>
+            <input
+              type="email"
+              className="form-control"
+              placeholder="votre@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          
+          <button 
+            type="submit" 
+            className="btn btn-primary" 
+            style={{ width: '100%' }} 
+            disabled={loading}
+          >
+            {loading ? <span className="loading"></span> : 'Envoyer le lien'}
+          </button>
+        </form>
+      )}
+      
+      <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+        <a 
+          href="#" 
+          onClick={(e) => { e.preventDefault(); onBack(); }} 
+          style={{ color: 'var(--secondary)', fontWeight: 600, textDecoration: 'none' }}
+        >
+          ← Retour à la connexion
+        </a>
       </p>
     </section>
   );

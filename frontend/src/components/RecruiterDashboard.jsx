@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import InterviewCalendar from './InterviewCalendar';
+import ReportsExport from './ReportsExport';
 
 const API_URL = 'http://localhost:8000';
 
 const RecruiterDashboard = ({ user, onLogout }) => {
+  const [currentView, setCurrentView] = useState('offers'); // offers, interviews, reports
   const [offers, setOffers] = useState([]);
   const [applications, setApplications] = useState([]);
   const [selectedOfferId, setSelectedOfferId] = useState(null);
@@ -12,6 +15,9 @@ const RecruiterDashboard = ({ user, onLogout }) => {
   const [showApplicationsModal, setShowApplicationsModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedApplications, setSelectedApplications] = useState(new Set());
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifLoading, setNotifLoading] = useState(false);
   
   const [draftData, setDraftData] = useState({
     title: '',
@@ -32,6 +38,7 @@ const RecruiterDashboard = ({ user, onLogout }) => {
 
   useEffect(() => {
     loadDashboard();
+    loadNotifications();
   }, []);
 
   const loadDashboard = async () => {
@@ -40,6 +47,28 @@ const RecruiterDashboard = ({ user, onLogout }) => {
       setOffers(response.data);
     } catch (error) {
       console.error('Error loading dashboard:', error);
+    }
+  };
+
+  const loadNotifications = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/users/${user.id}/notifications`);
+      setNotifications(response.data);
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+    }
+  };
+
+  const markAllNotificationsRead = async () => {
+    setNotifLoading(true);
+    try {
+      await axios.post(`${API_URL}/notifications/mark-read`, { user_id: user.id });
+      const refreshed = await axios.get(`${API_URL}/users/${user.id}/notifications`);
+      setNotifications(refreshed.data);
+    } catch (error) {
+      console.error('Error marking notifications as read:', error);
+    } finally {
+      setNotifLoading(false);
     }
   };
 
@@ -110,7 +139,10 @@ const RecruiterDashboard = ({ user, onLogout }) => {
     formData.append('application_ids', applicationId);
 
     try {
-      const response = await axios.post(`${API_URL}/offers/${selectedOfferId}/accept-multiple`, formData);
+      
+      const response = await axios.post(`${API_URL}/offers/${selectedOfferId}/accept-multiple`, {
+        application_ids: [applicationId]
+      });
       showApplicationsAlert(`✅ ${response.data.accepted_count} candidat(s) accepté(s), ${response.data.rejected_count} refusé(s). ${response.data.emails_sent} emails envoyés.`, 'success');
       // Refresh applications list and dashboard
       const resp = await axios.get(`${API_URL}/offers/${selectedOfferId}/applications`);
@@ -191,6 +223,145 @@ const RecruiterDashboard = ({ user, onLogout }) => {
     }
   };
 
+  // Télécharger un CV
+  const downloadCV = async (applicationId, filename) => {
+  try {
+    const token = localStorage.getItem('access_token');
+    
+    // DEBUG: Vérifiez si le token existe dans la console
+    console.log("Token envoyé :", token); 
+
+    if (!token || token === "null" || token === "undefined") {
+      alert("Votre session a expiré. Veuillez vous reconnecter.");
+      return;
+    }
+
+    const response = await fetch(`${API_URL}/applications/${applicationId}/cv`, {
+      method: 'GET', // Précisez la méthode par clarté
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (response.ok) {
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || `CV_${applicationId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } else {
+      // Si le backend renvoie 401, on affiche un message plus précis
+      if (response.status === 401) {
+        alert("Session expirée ou accès non autorisé (401).");
+      } else {
+        alert(`Erreur serveur (${response.status}) lors du téléchargement.`);
+      }
+    }
+  } catch (error) {
+    console.error('Erreur téléchargement CV:', error);
+    alert('Impossible de contacter le serveur.');
+  }
+};
+
+  // Télécharger le rapport de matching
+  const downloadMatchingReport = async (offerId) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${API_URL}/offers/${offerId}/matching-report`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const report = await response.json();
+        // Créer un fichier texte avec le rapport
+        const reportText = `
+RAPPORT DE MATCHING
+==================
+
+Offre: ${report.offer.title}
+Ville: ${report.offer.city || 'Non spécifié'}
+Expérience: ${report.offer.experience || 'Non spécifié'}
+
+STATISTIQUES
+------------
+Total candidatures: ${report.statistics.total_applications}
+Score moyen: ${report.statistics.average_score}/100
+Score maximum: ${report.statistics.max_score}/100
+Score minimum: ${report.statistics.min_score}/100
+
+Excellents profils (≥70): ${report.statistics.excellent_matches}
+Bons profils (50-69): ${report.statistics.good_matches}
+Profils faibles (<50): ${report.statistics.low_matches}
+
+Acceptés: ${report.statistics.accepted}
+Refusés: ${report.statistics.rejected}
+En attente: ${report.statistics.pending}
+
+TOP 5 CANDIDATS
+---------------
+${report.top_candidates.map((c, i) => `
+${i + 1}. ${c.name} (${c.email})
+   Score: ${c.score}/100
+   Statut: ${c.status}
+   Analyse: ${c.justification}
+`).join('\n')}
+        `;
+
+        const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `rapport_matching_offre_${offerId}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } else {
+        alert('Erreur lors de la génération du rapport');
+      }
+    } catch (error) {
+      console.error('Erreur rapport:', error);
+      alert('Erreur lors de la génération du rapport');
+    }
+  };
+
+  // Exporter la liste des candidats en CSV
+  const exportCandidatesCSV = async (offerId) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${API_URL}/offers/${offerId}/candidates/export-csv`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const filename = response.headers.get('content-disposition')?.split('filename=')[1] || `candidats_offre_${offerId}.csv`;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        alert('Export réussi !');
+      } else {
+        alert('Erreur lors de l\'export');
+      }
+    } catch (error) {
+      console.error('Erreur export:', error);
+      alert('Erreur lors de l\'export');
+    }
+  };
+
   const toggleSelection = (applicationId) => {
     const newSet = new Set(selectedApplications);
     if (newSet.has(applicationId)) {
@@ -201,33 +372,56 @@ const RecruiterDashboard = ({ user, onLogout }) => {
     setSelectedApplications(newSet);
   };
 
-  const acceptSelected = async () => {
-    if (selectedApplications.size === 0) {
-      showApplicationsAlert('Veuillez sélectionner au moins un candidat', 'error');
-      return;
+ const acceptSelected = async () => {
+  if (selectedApplications.size === 0) return;
+
+  const token = localStorage.getItem('access_token');
+  const dateTime = prompt("PLANIFICATION GROUPÉE\nFormat: YYYY-MM-DD HH:MM", "2026-02-15 09:00");
+
+  if (!dateTime) return;
+
+  try {
+    // 1. Conversion des IDs en nombres et préparation de la date
+    const selectedIds = Array.from(selectedApplications).map(id => Number(id));
+    const formattedDate = dateTime.replace(' ', 'T') + ":00";
+
+    // 2. Créer les entretiens un par un (car le backend crée 1 ligne par RDV)
+    for (const appId of selectedIds) {
+      const app = applications.find(a => a.id === appId);
+      await axios.post(`${API_URL}/interviews`, {
+        application_id: appId,
+        title: `Entretien : ${app?.offer_title || 'Poste'}`,
+        interview_date: formattedDate,
+        duration: 30,
+        meeting_type: "physical",
+        location: "Bureau RH"
+      }, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
     }
 
-    const selectedIds = Array.from(selectedApplications);
-    const selectedNames = applications.filter(a => selectedIds.includes(a.id)).map(a => a.candidate_name);
-    const namesPreview = selectedNames.length > 5 ? `${selectedNames.slice(0,5).join(', ')} et ${selectedNames.length - 5} autres` : selectedNames.join(', ');
+    // 3. ENVOI GROUPÉ UNIQUE (Correction de l'erreur 422)
+    // Au lieu de boucler, on envoie TOUS les IDs en une seule fois dans l'objet attendu
+    await axios.post(`${API_URL}/offers/${selectedOfferId}/accept-multiple`, 
+      { application_ids: selectedIds }, 
+      {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
-    if (!confirm(`Êtes-vous sûr de vouloir accepter ${selectedIds.length} candidat(s) (${namesPreview}) ? Les autres candidats recevront automatiquement un email de refus et l'offre sera fermée.`)) {
-      return;
-    }
-
-    const formData = new FormData();
-    selectedIds.forEach(id => formData.append('application_ids', id));
-
-    try {
-      const response = await axios.post(`${API_URL}/offers/${selectedOfferId}/accept-multiple`, formData);
-      showApplicationsAlert(`✅ ${response.data.accepted_count} candidat(s) accepté(s), ${response.data.rejected_count} refusé(s). ${response.data.emails_sent} emails envoyés.`, 'success');
-      setShowApplicationsModal(false);
-      setSelectedApplications(new Set());
-      loadDashboard();
-    } catch (error) {
-      showApplicationsAlert('Erreur lors de l\'acceptation', 'error');
-    }
-  };
+    alert("✅ Session groupée planifiée avec succès !");
+    setSelectedApplications(new Set());
+    setShowApplicationsModal(false);
+    loadDashboard();
+    
+  } catch (error) {
+    console.error("Détail erreur 422 :", error.response?.data);
+    alert("Erreur de format. Vérifiez les logs de la console.");
+  }
+};
 
   const rejectSelected = async () => {
     if (selectedApplications.size === 0) {
@@ -255,8 +449,55 @@ const RecruiterDashboard = ({ user, onLogout }) => {
       showApplicationsAlert('Erreur lors du refus: ' + (error.response?.data?.detail || error.message), 'error');
     }
   };
+  const handleAcceptAndSchedule = async (app) => {
+  const token = localStorage.getItem('access_token');
+  
+  // 1. Demander la date et l'heure au recruteur
+  const selectedDate = prompt("Entrez la date et l'heure de la session (Format: YYYY-MM-DD HH:MM)", "2026-02-20 09:00");
+  
+  if (!selectedDate) return; // Annuler si vide
 
+  const interviewData = {
+    application_id: app.id,
+    title: `Session d'entretien : ${app.offer_title}`,
+    description: "Session groupée - Passage individuel un par un.",
+    interview_date: selectedDate.replace(' ', 'T'), // Format ISO
+    duration: 30, // Durée estimée par personne
+    meeting_type: "physical",
+    location: "Salle d'attente - 2ème étage"
+  };
+
+  try {
+    // Étape A : On crée l'entretien dans la base
+    const response = await fetch('http://localhost:8000/interviews', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(interviewData)
+    });
+
+    if (response.ok) {
+      // Étape B : On met à jour le statut de la candidature en 'accepted'
+      await fetch(`http://localhost:8000/applications/${app.id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'accepted' })
+      });
+
+      alert(`Candidat ${app.candidate_name} accepté et ajouté à la session de ${selectedDate}`);
+      loadApplications(); // Recharger la liste
+    }
+  } catch (error) {
+    console.error("Erreur:", error);
+  }
+};
   const activeOffers = offers.filter(o => o.status === 'active').length;
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
     <section className="dashboard">
@@ -265,9 +506,90 @@ const RecruiterDashboard = ({ user, onLogout }) => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h1>Tableau de bord Recruteur</h1>
-              <p>Bienvenue {user.name} !</p>
+              <p style={{ fontSize: '1.05em', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                Bienvenue <span style={{ fontWeight: '600', color: 'var(--accent)' }}>{user.name}</span> !
+              </p>
             </div>
-            <button className="btn btn-secondary" onClick={onLogout}>Déconnexion</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', position: 'relative' }}>
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setShowNotifications(!showNotifications)}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', position: 'relative' }}
+              >
+                <span role="img" aria-label="Notifications">🔔</span>
+                {unreadCount > 0 && (
+                  <span className="badge badge-danger" style={{ position: 'absolute', top: '-0.35rem', right: '-0.35rem' }}>
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+              <button className="btn btn-secondary" onClick={onLogout}>Déconnexion</button>
+
+              {showNotifications && (
+                <div
+                  className="card"
+                  style={{ position: 'absolute', right: 0, top: '3.25rem', width: '400px', zIndex: 5, boxShadow: '0 12px 30px rgba(0,0,0,0.15)' }}
+                >
+                  <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h2 className="card-title" style={{ margin: 0 }}>Notifications</h2>
+                    <button className="btn btn-secondary" onClick={markAllNotificationsRead} disabled={notifLoading}>
+                      {notifLoading ? '...' : 'Tout lu'}
+                    </button>
+                  </div>
+                  <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    {notifications.length === 0 ? (
+                      <div className="empty-state" style={{ padding: '1rem 1.25rem' }}>
+                        <div className="empty-state-icon">🔔</div>
+                        <p>Aucune notification pour le moment.</p>
+                      </div>
+                    ) : (
+                      notifications.map((n) => {
+                        let bgColor = 'var(--bg-secondary)';
+                        let borderColor = 'transparent';
+                        let badgeColor = 'badge-blue';
+                        
+                        if (!n.is_read) {
+                          if (n.notif_type === 'application') {
+                            bgColor = 'var(--bg-accent-light)';
+                            borderColor = 'var(--accent)';
+                            badgeColor = 'badge-blue';
+                          } else if (n.notif_type === 'success') {
+                            bgColor = 'rgba(76, 175, 80, 0.08)';
+                            borderColor = '#4CAF50';
+                            badgeColor = 'badge-success';
+                          } else if (n.notif_type === 'warning') {
+                            bgColor = 'rgba(255, 152, 0, 0.08)';
+                            borderColor = '#FF9800';
+                            badgeColor = 'badge-warning';
+                          } else {
+                            bgColor = 'var(--bg-accent-light)';
+                            borderColor = 'var(--accent)';
+                          }
+                        }
+                        
+                        return (
+                          <div
+                            key={n.id}
+                            className="candidate-card"
+                            style={{ 
+                              background: bgColor, 
+                              marginBottom: '0.75rem',
+                              borderLeft: borderColor !== 'transparent' ? `3px solid ${borderColor}` : 'none'
+                            }}
+                          >
+                            <div className="candidate-info">
+                              <h4 style={{ marginBottom: '0.35rem', fontWeight: n.is_read ? 'normal' : 'bold' }}>{n.title}</h4>
+                              <p style={{ color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>{n.message}</p>
+                              {!n.is_read && <span className={`badge ${badgeColor}`}>Nouveau</span>}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -286,6 +608,70 @@ const RecruiterDashboard = ({ user, onLogout }) => {
           </div>
         </div>
 
+        {/* Navigation par onglets */}
+        <div style={{ marginBottom: '20px', borderBottom: '2px solid #e5e7eb' }}>
+          <div style={{ display: 'flex', gap: '0' }}>
+            <button
+              onClick={() => setCurrentView('offers')}
+              style={{
+                padding: '12px 24px',
+                background: currentView === 'offers' ? 'white' : 'transparent',
+                border: 'none',
+                borderBottom: currentView === 'offers' ? '3px solid var(--accent)' : '3px solid transparent',
+                fontWeight: currentView === 'offers' ? '600' : 'normal',
+                color: currentView === 'offers' ? 'var(--accent)' : 'var(--text-secondary)',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                fontSize: '15px'
+              }}
+            >
+              📝 Mes Offres
+            </button>
+            <button
+              onClick={() => setCurrentView('interviews')}
+              style={{
+                padding: '12px 24px',
+                background: currentView === 'interviews' ? 'white' : 'transparent',
+                border: 'none',
+                borderBottom: currentView === 'interviews' ? '3px solid var(--accent)' : '3px solid transparent',
+                fontWeight: currentView === 'interviews' ? '600' : 'normal',
+                color: currentView === 'interviews' ? 'var(--accent)' : 'var(--text-secondary)',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                fontSize: '15px'
+              }}
+            >
+              📅 Entretiens
+            </button>
+            <button
+              onClick={() => setCurrentView('reports')}
+              style={{
+                padding: '12px 24px',
+                background: currentView === 'reports' ? 'white' : 'transparent',
+                border: 'none',
+                borderBottom: currentView === 'reports' ? '3px solid var(--accent)' : '3px solid transparent',
+                fontWeight: currentView === 'reports' ? '600' : 'normal',
+                color: currentView === 'reports' ? 'var(--accent)' : 'var(--text-secondary)',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                fontSize: '15px'
+              }}
+            >
+              📊 Rapports
+            </button>
+          </div>
+        </div>
+
+        {/* Affichage conditionnel selon la vue */}
+        {currentView === 'interviews' && (
+          <InterviewCalendar user={user} />
+        )}
+
+        {currentView === 'reports' && (
+          <ReportsExport user={user} />
+        )}
+
+        {currentView === 'offers' && (
         <div className="card">
           <div className="card-header">
             <h2 className="card-title">Mes Offres d'Emploi</h2>
@@ -340,7 +726,7 @@ const RecruiterDashboard = ({ user, onLogout }) => {
             )}
           </div>
         </div>
-      </div>
+      )}
 
       {/* Create Offer Modal */}
       {showCreateModal && (
@@ -456,12 +842,30 @@ const RecruiterDashboard = ({ user, onLogout }) => {
               </div>
             )}
 
+            {/* Boutons d'export et rapport */}
+            <div style={{ marginBottom: '15px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <button 
+                className="btn btn-secondary"
+                onClick={() => downloadMatchingReport(selectedOfferId)}
+                style={{ fontSize: '14px', padding: '8px 16px' }}
+              >
+                📊 Rapport de Matching
+              </button>
+              <button 
+                className="btn btn-secondary"
+                onClick={() => exportCandidatesCSV(selectedOfferId)}
+                style={{ fontSize: '14px', padding: '8px 16px' }}
+              >
+                📥 Exporter en CSV
+              </button>
+            </div>
+
             {selectedApplications.size > 0 && (
               <div className="selection-actions" style={{ marginBottom: '12px' }}>
                 <span>{selectedApplications.size} candidat(s) sélectionné(s)</span>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                   <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Les candidats non sélectionnés recevront automatiquement un email de refus.</div>
-                  <button className="btn btn-success" onClick={acceptSelected}>Accepter la sélection</button>
+                  <button className="btn btn-success" onClick={acceptSelected} style={{ marginLeft: '15px', fontWeight: 'bold' }}>✅ Accepter et Planifier la session groupée</button>
                 </div>
               </div>
             )}
@@ -488,9 +892,19 @@ const RecruiterDashboard = ({ user, onLogout }) => {
                           <h4>{index + 1}. {app.candidate_name}</h4>
                           <p style={{ color: 'var(--text-secondary)' }}>{app.candidate_email}</p>
                           <p style={{ color: 'var(--text-primary)', marginTop: '0.5rem' }}>{app.justification}</p>
-                          <span className={`badge ${app.status === 'accepted' ? 'badge-success' : app.status === 'rejected' ? 'badge-danger' : 'badge-warning'}`} style={{ marginTop: '0.5rem' }}>
-                            {app.status === 'pending' ? 'En attente' : app.status === 'accepted' ? 'Accepté' : 'Refusé'}
-                          </span>
+                          <div style={{ marginTop: '0.75rem', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                            <span className={`badge ${app.status === 'accepted' ? 'badge-success' : app.status === 'rejected' ? 'badge-danger' : 'badge-warning'}`}>
+                              {app.status === 'pending' ? 'En attente' : app.status === 'accepted' ? 'Accepté' : 'Refusé'}
+                            </span>
+                            <button 
+                              className="btn btn-secondary"
+                              onClick={() => downloadCV(app.id, app.filename)}
+                              style={{ fontSize: '12px', padding: '4px 12px' }}
+                            >
+                              📄 Télécharger CV
+                            </button>
+                            
+                          </div>
                         </div>
                       </div>
 
@@ -505,8 +919,11 @@ const RecruiterDashboard = ({ user, onLogout }) => {
           </div>
         </div>
       )}
+      </div>
     </section>
   );
 };
+
+
 
 export default RecruiterDashboard;

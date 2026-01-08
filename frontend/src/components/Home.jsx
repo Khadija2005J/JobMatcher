@@ -10,9 +10,11 @@ const Home = ({ onShowLogin, onShowRegister }) => {
           Matching automatique, scoring intelligent et génération d'annonces avec l'intelligence artificielle générative
         </p>
         <div className="hero-buttons">
+          {/* Correction ici : onClick (un seul 'o') et appel de onShowRegister */}
           <button className="btn btn-primary" onClick={onShowRegister}>
             Commencer Gratuitement
           </button>
+          
           <button className="btn btn-outline" onClick={onShowLogin}>
             Se Connecter
           </button>
@@ -23,4 +25,3 @@ const Home = ({ onShowLogin, onShowRegister }) => {
 };
 
 export default Home;
-

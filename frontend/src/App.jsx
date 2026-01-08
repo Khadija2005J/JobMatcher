@@ -3,14 +3,28 @@ import Home from './components/Home';
 import Auth from './components/Auth';
 import RecruiterDashboard from './components/RecruiterDashboard';
 import CandidateDashboard from './components/CandidateDashboard';
+import ResetPassword from './components/ResetPassword';
 import './App.css';
 
 function App() {
   const [user, setUser] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
   const [showHome, setShowHome] = useState(true);
+  const [showResetPassword, setShowResetPassword] = useState(false);
 
   useEffect(() => {
+    // Vérifier si c'est une page de réinitialisation de mot de passe
+    const urlParams = new URLSearchParams(window.location.search);
+    const resetToken = urlParams.get('token');
+    
+    if (resetToken) {
+      setShowResetPassword(true);
+      setShowHome(false);
+      setShowAuth(false);
+      return;
+    }
+    
+    // Sinon, vérifier l'utilisateur connecté
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
@@ -18,7 +32,7 @@ function App() {
       setShowAuth(false);
     }
   }, []);
-
+  const [authMode, setAuthMode] = useState('login');
   const handleLogin = (userData) => {
     setUser(userData);
     localStorage.setItem('currentUser', JSON.stringify(userData));
@@ -34,11 +48,13 @@ function App() {
   };
 
   const showLogin = () => {
-    setShowAuth(true);
-    setShowHome(false);
+   setAuthMode('login'); // On prépare le mode connexion
+   setShowAuth(true);
+   setShowHome(false);
   };
 
   const showRegister = () => {
+    setAuthMode('register');
     setShowAuth(true);
     setShowHome(false);
   };
@@ -61,8 +77,9 @@ function App() {
 
       {!user ? (
         <>
-          {showHome && <Home onShowLogin={showLogin} onShowRegister={showRegister} />}
-          {showAuth && <Auth onLogin={handleLogin} />}
+          {showResetPassword && <ResetPassword />}
+          {showHome && !showResetPassword && <Home onShowLogin={showLogin} onShowRegister={showRegister} />}
+          {showAuth && !showResetPassword && <Auth onLogin={handleLogin} initialMode={authMode} />}
         </>
       ) : (
         user.role === 'recruiter' ? (

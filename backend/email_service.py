@@ -147,6 +147,31 @@ L'équipe Smart HIRE"""
     return send_email(recipient_email, subject, body)
 
 
+def send_password_reset_email(recipient_email: str, recipient_name: str, reset_token: str) -> Tuple[bool, str]:
+    """Envoie un email de réinitialisation de mot de passe."""
+    # Lien vers le frontend (racine) pour éviter les 404 côté Vite en dev
+    reset_link = f"http://localhost:5173/?token={reset_token}"
+    
+    subject = "Smart HIRE - Réinitialisation de votre mot de passe"
+    
+    body = f"""Bonjour {recipient_name},
+
+Vous avez demandé à réinitialiser votre mot de passe pour votre compte Smart HIRE.
+
+Pour créer un nouveau mot de passe, cliquez sur le lien ci-dessous :
+
+{reset_link}
+
+Ce lien est valable pendant 1 heure.
+
+Si vous n'avez pas demandé cette réinitialisation, vous pouvez ignorer cet email en toute sécurité.
+
+Cordialement,
+L'équipe Smart HIRE"""
+    
+    return send_email(recipient_email, subject, body)
+
+
 def test_email_configuration():
     """Teste la configuration email"""
     print("\n" + "="*70)
