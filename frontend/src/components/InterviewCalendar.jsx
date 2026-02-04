@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../App.css';
+import { FiCalendar, FiClock, FiMapPin, FiVideo, FiBriefcase, FiPhone, FiLink, FiUser, FiFileText, FiClipboard, FiCheck, FiX } from 'react-icons/fi';
 
 const InterviewCalendar = ({ user }) => {
   const [interviews, setInterviews] = useState([]);
@@ -86,12 +87,12 @@ const InterviewCalendar = ({ user }) => {
   // Obtenir l'icône du type de réunion
   const getMeetingTypeIcon = (type) => {
     const icons = {
-      'physical': '📍',
-      'zoom': '📹',
-      'teams': '💼',
-      'phone': '📞'
+      'physical': <FiMapPin aria-hidden="true" />,
+      'zoom': <FiVideo aria-hidden="true" />,
+      'teams': <FiBriefcase aria-hidden="true" />,
+      'phone': <FiPhone aria-hidden="true" />
     };
-    return icons[type] || '📍';
+    return icons[type] || <FiMapPin aria-hidden="true" />;
   };
 
   // Mettre à jour le statut
@@ -189,13 +190,13 @@ const InterviewCalendar = ({ user }) => {
             </button>
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <p style={{ color: '#6b7280', marginBottom: '5px' }}>📅 Date</p>
+            <div style={{ marginBottom: '20px' }}>
+            <p style={{ color: '#6b7280', marginBottom: '5px' }}><FiCalendar aria-hidden="true" /> Date</p>
             <p style={{ fontWeight: '600', marginTop: '5px' }}>{formatDate(selectedInterview.interview_date)}</p>
           </div>
 
           <div style={{ marginBottom: '20px' }}>
-            <p style={{ color: '#6b7280', marginBottom: '5px' }}>⏱️ Durée</p>
+            <p style={{ color: '#6b7280', marginBottom: '5px' }}><FiClock aria-hidden="true" /> Durée</p>
             <p style={{ fontWeight: '600', marginTop: '5px' }}>{selectedInterview.duration} minutes</p>
           </div>
 
@@ -204,16 +205,16 @@ const InterviewCalendar = ({ user }) => {
             <p style={{ fontWeight: '600', marginTop: '5px', textTransform: 'capitalize' }}>{selectedInterview.meeting_type}</p>
           </div>
 
-          {selectedInterview.location && (
+            {selectedInterview.location && (
             <div style={{ marginBottom: '20px' }}>
-              <p style={{ color: '#6b7280', marginBottom: '5px' }}>📍 Lieu</p>
+              <p style={{ color: '#6b7280', marginBottom: '5px' }}><FiMapPin aria-hidden="true" /> Lieu</p>
               <p style={{ fontWeight: '600', marginTop: '5px' }}>{selectedInterview.location}</p>
             </div>
           )}
 
-          {selectedInterview.meeting_url && (
+            {selectedInterview.meeting_url && (
             <div style={{ marginBottom: '20px' }}>
-              <p style={{ color: '#6b7280', marginBottom: '5px' }}>🔗 Lien de réunion</p>
+              <p style={{ color: '#6b7280', marginBottom: '5px' }}><FiLink aria-hidden="true" /> Lien de réunion</p>
               <a 
                 href={selectedInterview.meeting_url} 
                 target="_blank" 
@@ -225,9 +226,9 @@ const InterviewCalendar = ({ user }) => {
             </div>
           )}
 
-          <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '20px' }}>
             <p style={{ color: '#6b7280', marginBottom: '5px' }}>
-              {user.role === 'recruiter' ? '👤 Candidat' : '👤 Recruteur'}
+              {user.role === 'recruiter' ? <><FiUser aria-hidden="true" /> Candidat</> : <><FiUser aria-hidden="true" /> Recruteur</>}
             </p>
             <p style={{ fontWeight: '600', marginTop: '5px' }}>
               {user.role === 'recruiter' 
@@ -242,20 +243,20 @@ const InterviewCalendar = ({ user }) => {
           </div>
 
           <div style={{ marginBottom: '20px' }}>
-            <p style={{ color: '#6b7280', marginBottom: '5px' }}>💼 Offre</p>
+            <p style={{ color: '#6b7280', marginBottom: '5px' }}><FiBriefcase aria-hidden="true" /> Offre</p>
             <p style={{ fontWeight: '600', marginTop: '5px' }}>{selectedInterview.offer_title}</p>
           </div>
 
-          {selectedInterview.description && (
+              {selectedInterview.description && (
             <div style={{ marginBottom: '20px' }}>
-              <p style={{ color: '#6b7280', marginBottom: '5px' }}>📝 Description</p>
+              <p style={{ color: '#6b7280', marginBottom: '5px' }}><FiFileText aria-hidden="true" /> Description</p>
               <p style={{ marginTop: '5px' }}>{selectedInterview.description}</p>
             </div>
           )}
 
           {selectedInterview.notes && (
             <div style={{ marginBottom: '20px' }}>
-              <p style={{ color: '#6b7280', marginBottom: '5px' }}>📋 Notes</p>
+              <p style={{ color: '#6b7280', marginBottom: '5px' }}><FiClipboard aria-hidden="true" /> Notes</p>
               <p style={{ marginTop: '5px' }}>{selectedInterview.notes}</p>
             </div>
           )}
@@ -264,7 +265,7 @@ const InterviewCalendar = ({ user }) => {
           <div style={{ marginTop: '30px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             {selectedInterview.status === 'proposed' && user.role === 'candidate' && (
               <>
-                <button
+                  <button
                   onClick={() => updateStatus(selectedInterview.id, 'accepted')}
                   disabled={loading}
                   style={{
@@ -277,7 +278,7 @@ const InterviewCalendar = ({ user }) => {
                     fontWeight: '600'
                   }}
                 >
-                  ✅ Accepter
+                  <><FiCheck aria-hidden="true" style={{ marginRight: '6px' }} />Accepter</>
                 </button>
                 <button
                   onClick={() => updateStatus(selectedInterview.id, 'rejected')}
@@ -292,13 +293,13 @@ const InterviewCalendar = ({ user }) => {
                     fontWeight: '600'
                   }}
                 >
-                  ❌ Refuser
+                  <><FiX aria-hidden="true" style={{ marginRight: '6px' }} />Refuser</>
                 </button>
               </>
             )}
 
             {selectedInterview.status === 'accepted' && (
-              <button
+                <button
                 onClick={() => updateStatus(selectedInterview.id, 'completed')}
                 disabled={loading}
                 style={{
@@ -311,7 +312,7 @@ const InterviewCalendar = ({ user }) => {
                   fontWeight: '600'
                 }}
               >
-                ✓ Marquer comme terminé
+                <><FiCheck aria-hidden="true" style={{ marginRight: '6px' }} />Marquer comme terminé</>
               </button>
             )}
 
@@ -328,7 +329,7 @@ const InterviewCalendar = ({ user }) => {
                 fontWeight: '600'
               }}
             >
-              🚫 Annuler
+              <><FiX aria-hidden="true" style={{ marginRight: '6px' }} />Annuler</>
             </button>
           </div>
         </div>
@@ -358,7 +359,7 @@ const InterviewCalendar = ({ user }) => {
   return (
     <div style={{ padding: '20px' }}>
       <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
-        <h1 style={{ margin: 0 }}>📅 Mes Entretiens</h1>
+        <h2 className="card-title" style={{ margin: 0 }}>Mes Entretiens</h2>
         
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <select 
@@ -389,7 +390,7 @@ const InterviewCalendar = ({ user }) => {
           borderRadius: '12px'
         }}>
           <p style={{ fontSize: '48px', margin: '0 0 15px 0' }}>📅</p>
-          <h3 style={{ margin: '0 0 10px 0', color: '#374151' }}>Aucun entretien</h3>
+          <h3 className="card-title" style={{ margin: '0 0 10px 0', color: '#374151' }}>Aucun entretien</h3>
           <p style={{ color: '#6b7280' }}>
             {filterStatus !== 'all' 
               ? `Aucun entretien avec le statut "${filterStatus}"`

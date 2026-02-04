@@ -625,7 +625,7 @@ ${i + 1}. ${c.name} (${c.email})
                 fontSize: '15px'
               }}
             >
-              📝 Mes Offres
+               Mes Offres
             </button>
             <button
               onClick={() => setCurrentView('interviews')}
@@ -641,7 +641,7 @@ ${i + 1}. ${c.name} (${c.email})
                 fontSize: '15px'
               }}
             >
-              📅 Entretiens
+               Entretiens
             </button>
             <button
               onClick={() => setCurrentView('reports')}
@@ -657,7 +657,7 @@ ${i + 1}. ${c.name} (${c.email})
                 fontSize: '15px'
               }}
             >
-              📊 Rapports
+               Rapports
             </button>
           </div>
         </div>
@@ -682,7 +682,7 @@ ${i + 1}. ${c.name} (${c.email})
           <div className="offers-grid">
             {offers.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-state-icon">📋</div>
+                <div className="empty-state-icon"></div>
                 <p>Aucune offre créée. Cliquez sur "Créer une offre" pour commencer !</p>
               </div>
             ) : (
@@ -849,14 +849,14 @@ ${i + 1}. ${c.name} (${c.email})
                 onClick={() => downloadMatchingReport(selectedOfferId)}
                 style={{ fontSize: '14px', padding: '8px 16px' }}
               >
-                📊 Rapport de Matching
+                 Rapport de Matching
               </button>
               <button 
                 className="btn btn-secondary"
                 onClick={() => exportCandidatesCSV(selectedOfferId)}
                 style={{ fontSize: '14px', padding: '8px 16px' }}
               >
-                📥 Exporter en CSV
+                 Exporter en CSV
               </button>
             </div>
 
@@ -901,7 +901,7 @@ ${i + 1}. ${c.name} (${c.email})
                               onClick={() => downloadCV(app.id, app.filename)}
                               style={{ fontSize: '12px', padding: '4px 12px' }}
                             >
-                              📄 Télécharger CV
+                               Télécharger CV
                             </button>
                             
                           </div>

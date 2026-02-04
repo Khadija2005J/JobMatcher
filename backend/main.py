@@ -33,6 +33,8 @@ from email_service import send_acceptance_email, send_rejection_email, send_pass
 from meeting_service import meeting_service
 from report_service import report_service
 from reminder_service import reminder_service
+from calendar_integration import create_google_event, create_outlook_event
+from database import save_calendar_token, get_calendar_token
 import asyncio
 
 # Initialisation
@@ -282,6 +284,75 @@ async def reset_password(request: PasswordResetConfirm):
     return {
         "message": "Votre mot de passe a été réinitialisé avec succès"
     }
+
+
+# --- Calendar integration endpoints (Google / Outlook) ---
+class CalendarConnect(BaseModel):
+    user_id: int
+    provider: str  # 'google' or 'outlook'
+    access_token: str
+    refresh_token: Optional[str] = None
+    expires_at: Optional[str] = None
+
+
+@app.post("/calendar/connect")
+async def calendar_connect(payload: CalendarConnect):
+    """Enregistre un token OAuth pour un utilisateur (prototype).
+    NOTE: In production, implement full OAuth flow with redirects and secure storage.
+    """
+    ok = save_calendar_token(payload.user_id, payload.provider, payload.access_token, payload.refresh_token, payload.expires_at)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Impossible d'enregistrer le token calendar")
+    return {"message": "Token enregistré"}
+
+
+class CalendarEvent(BaseModel):
+    user_id: int
+    provider: str  # 'google' or 'outlook'
+    summary: str
+    description: Optional[str] = None
+    start_iso: str
+    end_iso: str
+    location: Optional[str] = None
+
+
+@app.post("/calendar/create-event")
+async def calendar_create_event(ev: CalendarEvent):
+    """Crée un événement dans le calendrier connecté de l'utilisateur.
+
+    This endpoint expects that an access token has been saved via /calendar/connect or is provided.
+    Prototype: uses direct access_token stored; production must use refresh flow and secure storage.
+    """
+    token_row = get_calendar_token(ev.user_id, ev.provider)
+    if not token_row:
+        raise HTTPException(status_code=404, detail="Aucun token calendar trouvé pour cet utilisateur/provider")
+    access_token = token_row.get('access_token')
+
+    if ev.provider.lower() == 'google':
+        event_payload = {
+            "summary": ev.summary,
+            "description": ev.description or "",
+            "start": {"dateTime": ev.start_iso},
+            "end": {"dateTime": ev.end_iso},
+            "location": ev.location or ''
+        }
+        result = create_google_event(access_token, event_payload)
+    elif ev.provider.lower() == 'outlook':
+        event_payload = {
+            "subject": ev.summary,
+            "body": {"contentType": "HTML", "content": ev.description or ""},
+            "start": {"dateTime": ev.start_iso, "timeZone": "UTC"},
+            "end": {"dateTime": ev.end_iso, "timeZone": "UTC"},
+            "location": {"displayName": ev.location or ""}
+        }
+        result = create_outlook_event(access_token, event_payload)
+    else:
+        raise HTTPException(status_code=400, detail="Provider inconnu")
+
+    if not result.get('ok'):
+        raise HTTPException(status_code=500, detail=f"Échec création événement: {result.get('error')}")
+
+    return {"message": "Événement créé", "data": result.get('data')}
 
 
 # --- NOTIFICATIONS ---

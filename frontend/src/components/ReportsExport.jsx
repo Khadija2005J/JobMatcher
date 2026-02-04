@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { FiDownload, FiCalendar, FiInbox, FiFileText } from 'react-icons/fi';
 
 const ReportsExport = ({ user }) => {
   const [loading, setLoading] = useState(false);
@@ -168,7 +169,7 @@ const ReportsExport = ({ user }) => {
   return (
     <div style={{ padding: '20px' }}>
       <div style={{ marginBottom: '30px' }}>
-        <h1 style={{ margin: '0 0 10px 0' }}>📊 Rapports & Statistiques</h1>
+        <h2 className="card-title" style={{ margin: '0 0 10px 0' }}>Rapports & Statistiques</h2>
         <p style={{ color: '#6b7280', margin: 0 }}>
           Consultez vos statistiques et exportez vos données
         </p>
@@ -177,7 +178,7 @@ const ReportsExport = ({ user }) => {
       {/* Statistiques */}
       {statistics && (
         <div style={{ marginBottom: '40px' }}>
-          <h2 style={{ marginBottom: '20px' }}>Vue d'ensemble</h2>
+          <h3 className="section-subtitle" style={{ marginBottom: '20px' }}>Vue d'ensemble</h3>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -186,37 +187,37 @@ const ReportsExport = ({ user }) => {
             {user.role === 'recruiter' ? (
               <>
                 <StatCard 
-                  icon="📝" 
+                  icon="" 
                   title="Offres actives" 
                   value={statistics.active_offers}
                   color="#2563eb"
                 />
                 <StatCard 
-                  icon="📬" 
+                  icon="" 
                   title="Candidatures totales" 
                   value={statistics.total_applications}
                   color="#10b981"
                 />
                 <StatCard 
-                  icon="⏳" 
+                  icon="" 
                   title="En attente" 
                   value={statistics.pending_applications}
                   color="#f59e0b"
                 />
                 <StatCard 
-                  icon="✅" 
+                  icon="" 
                   title="Acceptées" 
                   value={statistics.accepted_applications}
                   color="#34d399"
                 />
                 <StatCard 
-                  icon="📅" 
+                  icon="" 
                   title="Entretiens planifiés" 
                   value={statistics.scheduled_interviews}
                   color="#8b5cf6"
                 />
                 <StatCard 
-                  icon="⭐" 
+                  icon="" 
                   title="Score moyen" 
                   value={`${statistics.average_score}/100`}
                   color="#f59e0b"
@@ -225,37 +226,37 @@ const ReportsExport = ({ user }) => {
             ) : (
               <>
                 <StatCard 
-                  icon="📬" 
+                  icon="" 
                   title="Candidatures envoyées" 
                   value={statistics.total_applications}
                   color="#2563eb"
                 />
                 <StatCard 
-                  icon="⏳" 
+                  icon="" 
                   title="En attente" 
                   value={statistics.pending_applications}
                   color="#f59e0b"
                 />
                 <StatCard 
-                  icon="✅" 
+                  icon="" 
                   title="Acceptées" 
                   value={statistics.accepted_applications}
                   color="#10b981"
                 />
                 <StatCard 
-                  icon="📅" 
+                  icon="" 
                   title="Entretiens à venir" 
                   value={statistics.upcoming_interviews}
                   color="#8b5cf6"
                 />
                 <StatCard 
-                  icon="⭐" 
+                  icon="" 
                   title="Offres favorites" 
                   value={statistics.favorites}
                   color="#ec4899"
                 />
                 <StatCard 
-                  icon="📊" 
+                  icon="" 
                   title="Score moyen" 
                   value={`${statistics.average_score}/100`}
                   color="#f59e0b"
@@ -268,8 +269,8 @@ const ReportsExport = ({ user }) => {
 
       {/* Section Export */}
       <div style={{ marginBottom: '40px' }}>
-        <h2 style={{ marginBottom: '20px' }}>📥 Exports CSV</h2>
-        <div style={{
+        <h3 className="section-subtitle" style={{ marginBottom: '20px' }}><FiDownload aria-hidden="true" /> Exports CSV</h3>
+          <div style={{
           display: 'grid',
           gap: '15px',
           gridTemplateColumns: user.role === 'recruiter' ? 'repeat(auto-fit, minmax(300px, 1fr))' : '1fr'
@@ -280,7 +281,7 @@ const ReportsExport = ({ user }) => {
             borderRadius: '12px',
             padding: '24px'
           }}>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '18px' }}>📅 Entretiens</h3>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '18px' }}><FiCalendar aria-hidden="true" /> Entretiens</h3>
             <p style={{ color: '#6b7280', margin: '0 0 20px 0', fontSize: '14px' }}>
               Exportez la liste complète de vos entretiens au format CSV
             </p>
@@ -300,7 +301,7 @@ const ReportsExport = ({ user }) => {
               onMouseEnter={(e) => e.target.style.backgroundColor = '#1d4ed8'}
               onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
             >
-              📥 Télécharger les entretiens (.csv)
+              <><FiDownload aria-hidden="true" style={{ marginRight: '8px' }} />Télécharger les entretiens (.csv)</>
             </button>
           </div>
 
@@ -311,7 +312,7 @@ const ReportsExport = ({ user }) => {
               borderRadius: '12px',
               padding: '24px'
             }}>
-              <h3 style={{ margin: '0 0 10px 0', fontSize: '18px' }}>📬 Candidatures</h3>
+              <h3 style={{ margin: '0 0 10px 0', fontSize: '18px' }}><FiInbox aria-hidden="true" /> Candidatures</h3>
               <p style={{ color: '#6b7280', margin: '0 0 20px 0', fontSize: '14px' }}>
                 Exportez toutes les candidatures reçues avec les scores IA
               </p>
@@ -331,7 +332,7 @@ const ReportsExport = ({ user }) => {
                 onMouseEnter={(e) => e.target.style.backgroundColor = '#059669'}
                 onMouseLeave={(e) => e.target.style.backgroundColor = '#10b981'}
               >
-                📥 Télécharger les candidatures (.csv)
+                <><FiDownload aria-hidden="true" style={{ marginRight: '8px' }} />Télécharger les candidatures (.csv)</>
               </button>
             </div>
           )}
@@ -341,7 +342,7 @@ const ReportsExport = ({ user }) => {
       {/* Tableau des entretiens */}
       {interviewsReport.length > 0 && (
         <div style={{ marginBottom: '40px' }}>
-          <h2 style={{ marginBottom: '20px' }}>📅 Historique des entretiens</h2>
+          <h3 className="section-subtitle" style={{ marginBottom: '20px' }}><FiCalendar aria-hidden="true" /> Historique des entretiens</h3>
           <div style={{
             backgroundColor: 'white',
             border: '1px solid #e5e7eb',
@@ -415,7 +416,7 @@ const ReportsExport = ({ user }) => {
       {/* Tableau des candidatures (recruteur uniquement) */}
       {user.role === 'recruiter' && applicationsReport.length > 0 && (
         <div style={{ marginBottom: '40px' }}>
-          <h2 style={{ marginBottom: '20px' }}>📬 Candidatures récentes</h2>
+          <h3 className="section-subtitle" style={{ marginBottom: '20px' }}><FiInbox aria-hidden="true" /> Candidatures récentes</h3>
           <div style={{
             backgroundColor: 'white',
             border: '1px solid #e5e7eb',

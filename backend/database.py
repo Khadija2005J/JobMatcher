@@ -196,6 +196,24 @@ def init_db():
     conn.close()
     print("✅ Base de données initialisée avec succès!")
 
+    # 11. Table pour stocker les tokens calendar OAuth
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS calendar_tokens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        provider TEXT NOT NULL, -- 'google' or 'outlook'
+        access_token TEXT NOT NULL,
+        refresh_token TEXT,
+        expires_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+    """)
+    conn.commit()
+    conn.close()
+
 def create_user(email: str, password: str, name: str, role: str):
     """Crée un nouvel utilisateur."""
     conn = get_connection()
@@ -771,3 +789,35 @@ def mark_reminder_sent(reminder_id: int):
         return False
     finally:
         conn.close()
+
+def save_calendar_token(user_id: int, provider: str, access_token: str, refresh_token: str = None, expires_at: str = None):
+    """Enregistre ou met à jour le token OAuth pour un utilisateur et un provider."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        # Upsert-like behavior: delete existing for user+provider then insert
+        cursor.execute("DELETE FROM calendar_tokens WHERE user_id = ? AND provider = ?", (user_id, provider))
+        cursor.execute(
+            "INSERT INTO calendar_tokens (user_id, provider, access_token, refresh_token, expires_at) VALUES (?, ?, ?, ?, ?)",
+            (user_id, provider, access_token, refresh_token, expires_at)
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Erreur save_calendar_token: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_calendar_token(user_id: int, provider: str):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT access_token, refresh_token, expires_at FROM calendar_tokens WHERE user_id = ? AND provider = ?",
+        (user_id, provider)
+    )
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return None
+    return {"access_token": row[0], "refresh_token": row[1], "expires_at": row[2]}

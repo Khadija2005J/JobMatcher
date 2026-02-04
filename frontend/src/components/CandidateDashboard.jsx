@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import InterviewCalendar from './InterviewCalendar';
 import ReportsExport from './ReportsExport';
+import { FiBell, FiStar, FiSearch, FiMapPin, FiClipboard, FiFileText, FiPaperclip, FiMail } from 'react-icons/fi';
+import { FaRobot } from 'react-icons/fa';
 
 const API_URL = 'http://localhost:8000';
 
@@ -145,8 +147,9 @@ const CandidateDashboard = ({ user, onLogout }) => {
                 className="btn btn-secondary"
                 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', position: 'relative' }}
                 onClick={() => setShowNotifPanel(prev => !prev)}
+                aria-label="Afficher les notifications"
               >
-                <span role="img" aria-label="Notifications">🔔</span>
+                <FiBell aria-hidden="true" />
                 {unreadCount > 0 && (
                   <span className="badge badge-danger" style={{ position: 'absolute', top: '-0.35rem', right: '-0.35rem' }}>
                     {unreadCount}
@@ -157,8 +160,9 @@ const CandidateDashboard = ({ user, onLogout }) => {
                 className="btn btn-secondary"
                 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', position: 'relative' }}
                 onClick={() => setShowFavPanel(prev => !prev)}
+                aria-label="Afficher les favoris"
               >
-                <span role="img" aria-label="Favoris">⭐</span>
+                <FiStar aria-hidden="true" />
                 {favorites.length > 0 && (
                   <span className="badge badge-warning" style={{ position: 'absolute', top: '-0.35rem', right: '-0.35rem' }}>
                     {favorites.length}
@@ -179,9 +183,9 @@ const CandidateDashboard = ({ user, onLogout }) => {
                     </button>
                   </div>
                   <div style={{ maxHeight: '340px', overflowY: 'auto' }}>
-                    {notifications.length === 0 ? (
+                      {notifications.length === 0 ? (
                       <div className="empty-state" style={{ padding: '1rem 1.25rem' }}>
-                        <div className="empty-state-icon">🔔</div>
+                        <div className="empty-state-icon"><FiBell size={32} aria-hidden="true" /></div>
                         <p>Aucune notification pour le moment.</p>
                       </div>
                     ) : (
@@ -243,7 +247,7 @@ const CandidateDashboard = ({ user, onLogout }) => {
                   <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
                     {favorites.length === 0 ? (
                       <div className="empty-state" style={{ padding: '1rem 1.25rem' }}>
-                        <div className="empty-state-icon">⭐</div>
+                        <div className="empty-state-icon"><FiStar size={32} aria-hidden="true" /></div>
                         <p>Aucun favori. Ajoutez des offres !</p>
                       </div>
                     ) : (
@@ -284,28 +288,28 @@ const CandidateDashboard = ({ user, onLogout }) => {
         </div>
 
         <div className="info-section">
-          <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>💡</div>
+          <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}><FiMail aria-hidden="true" /></div>
           <h3>Comment postuler aux offres ?</h3>
           <p>Pour chaque offre qui vous intéresse, cliquez sur "Postuler" et uploadez votre CV en PDF. Notre IA analysera automatiquement votre profil et le recruteur pourra voir votre score de compatibilité.</p>
           
           <div className="workflow-steps">
             <div className="workflow-step">
-              <div className="workflow-step-icon">📋</div>
+              <div className="workflow-step-icon"><FiClipboard aria-hidden="true" /></div>
               <div className="workflow-step-text">Choisir une offre</div>
             </div>
             <div className="workflow-arrow">→</div>
             <div className="workflow-step">
-              <div className="workflow-step-icon">📄</div>
+              <div className="workflow-step-icon"><FiFileText aria-hidden="true" /></div>
               <div className="workflow-step-text">Upload CV (PDF)</div>
             </div>
             <div className="workflow-arrow">→</div>
             <div className="workflow-step">
-              <div className="workflow-step-icon">🤖</div>
+              <div className="workflow-step-icon"><FaRobot aria-hidden="true" /></div>
               <div className="workflow-step-text">Analyse IA</div>
             </div>
             <div className="workflow-arrow">→</div>
             <div className="workflow-step">
-              <div className="workflow-step-icon">📬</div>
+              <div className="workflow-step-icon"><FiMail aria-hidden="true" /></div>
               <div className="workflow-step-text">Réponse recruteur</div>
             </div>
           </div>
@@ -328,7 +332,7 @@ const CandidateDashboard = ({ user, onLogout }) => {
                 fontSize: '15px'
               }}
             >
-              💼 Offres d'emploi
+               Offres d'emploi
             </button>
             <button
               onClick={() => setCurrentView('applications')}
@@ -344,7 +348,7 @@ const CandidateDashboard = ({ user, onLogout }) => {
                 fontSize: '15px'
               }}
             >
-              📬 Mes Candidatures
+               Mes Candidatures
             </button>
             <button
               onClick={() => setCurrentView('interviews')}
@@ -360,7 +364,7 @@ const CandidateDashboard = ({ user, onLogout }) => {
                 fontSize: '15px'
               }}
             >
-              📅 Entretiens
+               Entretiens
             </button>
             <button
               onClick={() => setCurrentView('reports')}
@@ -376,7 +380,7 @@ const CandidateDashboard = ({ user, onLogout }) => {
                 fontSize: '15px'
               }}
             >
-              📊 Mes Statistiques
+               Mes Statistiques
             </button>
           </div>
         </div>
@@ -397,7 +401,7 @@ const CandidateDashboard = ({ user, onLogout }) => {
             </div>
             {myApplications.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-state-icon">📭</div>
+                <div className="empty-state-icon"></div>
                 <p>Aucune candidature envoyée pour le moment.</p>
               </div>
             ) : (
@@ -427,7 +431,7 @@ const CandidateDashboard = ({ user, onLogout }) => {
               <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                 <input
                   type="text"
-                  placeholder="🔍 Rechercher une offre..."
+                  placeholder=" Rechercher une offre..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="form-control"
@@ -443,7 +447,7 @@ const CandidateDashboard = ({ user, onLogout }) => {
                 </select>
                 <input
                   type="text"
-                  placeholder="📍 Ville..."
+                  placeholder=" Ville..."
                   value={filterCity}
                   onChange={(e) => setFilterCity(e.target.value)}
                   className="form-control"
@@ -451,7 +455,7 @@ const CandidateDashboard = ({ user, onLogout }) => {
                 />
                 <input
                   type="text"
-                  placeholder="🎓 Expérience..."
+                  placeholder=" Expérience..."
                   value={filterExperience}
                   onChange={(e) => setFilterExperience(e.target.value)}
                   className="form-control"
@@ -483,7 +487,7 @@ const CandidateDashboard = ({ user, onLogout }) => {
             <div className="offers-grid">
             {filteredOffers.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-state-icon">🔍</div>
+                <div className="empty-state-icon"></div>
                 <p>{offers.length === 0 ? 'Aucune offre disponible pour le moment. Revenez plus tard !' : 'Aucune offre ne correspond à vos critères.'}</p>
               </div>
             ) : (

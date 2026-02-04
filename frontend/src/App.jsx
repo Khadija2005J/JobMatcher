@@ -4,6 +4,11 @@ import Auth from './components/Auth';
 import RecruiterDashboard from './components/RecruiterDashboard';
 import CandidateDashboard from './components/CandidateDashboard';
 import ResetPassword from './components/ResetPassword';
+import About from './components/About';
+import Features from './components/Features';
+import Benefits from './components/Benefits';
+import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import Footer from './components/Footer';
 import './App.css';
 
 function App() {
@@ -32,6 +37,7 @@ function App() {
       setShowAuth(false);
     }
   }, []);
+  const navigate = useNavigate();
   const [authMode, setAuthMode] = useState('login');
   const handleLogin = (userData) => {
     setUser(userData);
@@ -49,32 +55,20 @@ function App() {
 
   const showLogin = () => {
    setAuthMode('login'); // On prépare le mode connexion
+   navigate('/');
    setShowAuth(true);
    setShowHome(false);
   };
 
   const showRegister = () => {
     setAuthMode('register');
+    navigate('/');
     setShowAuth(true);
     setShowHome(false);
   };
 
-  return (
-    <div className="App">
-      <header className="header">
-        <div className="header-content">
-          <div className="logo">Smart<span className="logo-accent">HIRE</span></div>
-          <nav className="nav-links">
-            {!user && (
-              <>
-                <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); setShowHome(true); setShowAuth(false); }}>Accueil</a>
-                <button className="btn btn-primary" onClick={showLogin}>Connexion</button>
-              </>
-            )}
-          </nav>
-        </div>
-      </header>
-
+  const mainContent = (
+    <>
       {!user ? (
         <>
           {showResetPassword && <ResetPassword />}
@@ -88,6 +82,36 @@ function App() {
           <CandidateDashboard user={user} onLogout={handleLogout} />
         )
       )}
+    </>
+  );
+
+  return (
+    <div className="App">
+      <header className="header">
+        <div className="header-content">
+          <div className="logo">Job<span className="logo-accent">Matcher</span></div>
+          <nav className="nav-links">
+            {!user && (
+              <>
+                <Link to="/" className="nav-link" onClick={() => { setShowHome(true); setShowAuth(false); }}>Accueil</Link>
+                <Link to="/about" className="nav-link">À propos</Link>
+                <Link to="/features" className="nav-link" style={{ marginLeft: '6px' }}>Fonctionnalités</Link>
+                <Link to="/benefits" className="nav-link" style={{ marginLeft: '6px' }}>Avantages</Link>
+                <button className="btn btn-primary" onClick={showLogin} style={{ marginLeft: '8px' }}>Connexion</button>
+              </>
+            )}
+          </nav>
+        </div>
+      </header>
+
+      <Routes>
+        <Route path="/" element={mainContent} />
+        <Route path="/about" element={<About />} />
+        <Route path="/features" element={<Features />} />
+        <Route path="/benefits" element={<Benefits />} />
+      </Routes>
+
+      <Footer />
     </div>
   );
 }
